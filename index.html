@@ -1,0 +1,389 @@
+<!doctype html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+		<script>
+			requirejs.config({
+				paths : {
+					goatee : "https://www.experiencegr.com/includes/public/managed/610898/core/npm/goatee/1/public/index"
+				}
+			});
+		</script>
+		
+		<script src="http://code.jquery.com/jquery-3.2.1.min.js"></script>
+		
+		<!-- Compressed CSS -->
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/foundation/6.4.1/css/foundation.min.css" type="text/css">
+
+		<!-- Compressed JavaScript -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.4.1/js/foundation.min.js"></script>
+	</head>
+	<body>
+		<div class="grid-container">
+			<h1>Tournament Creator</h1>
+			<ul class="tabs" data-tabs id="primary-tabs">
+				<li class="tabs-title is-active"><a href="#setup">Setup</a></li>
+				<li class="tabs-title"><a href="#round1">Round 1</a></li>
+				<li class="tabs-title"><a href="#round2">Round 2</a></li>
+				<li class="tabs-title"><a href="#tournament">Tournament</a></li>
+			</ul>
+			<div class="tabs-content" data-tabs-content="primary-tabs">
+				<div class="tabs-panel is-active" id="setup">
+					<div class="setup">
+						<form>
+							<div class="grid-x grid-margin-x">
+								<div class="cell small-8">
+									<label>
+										Number of Players
+										<input type="number" name="numplayers" value="28"/>
+									</label>
+								</div>
+								<div class="cell small-4">
+									<label>
+										&nbsp;
+										<button class="button expanded setupPlayers">Setup Players</button>
+									</label>
+								</div>
+							</div>
+							<div class="grid-x grid-margin-x">
+								<div class="cell small-6">
+									<label>
+										Min Pools
+										<input type="number" name="minpools" value="4"/>
+									</label>
+								</div>
+								<div class="cell small-6">
+									<label>
+										Max Pools
+										<input type="number" name="maxpools" value="8"/>
+									</label>
+								</div>
+							</div>
+							<div class="grid-x grid-margin-x">
+								<div class="cell small-6">
+									<label>
+										Min Players
+										<input type="number" name="minplayers" value="4"/>
+									</label>
+								</div>
+								<div class="cell small-6">
+									<label>
+										Max Players
+										<input type="number" name="maxplayers" value="6"/>
+									</label>
+								</div>
+							</div>
+							<div class="grid-x">
+								<input type="submit" value="Build Tournament" class="button expanded"/>
+							</div>
+							<div class="playersContainer">
+							
+							</div>
+						</form>
+					</div>
+				</div>
+				<div class="tabs-panel" id="round1">
+					<div class="round1">
+					
+					</div>
+					<div class="grid-x">
+						<button class="button expanded startRound2">Start Round 2</button>
+					</div>
+				</div>
+				<div class="tabs-panel" id="round2">
+					<div class="round2">
+					
+					</div>
+					<div class="grid-x">
+						<button class="button expanded startTournament">Start Tournament</button>
+					</div>
+				</div>
+				<div class="tabs-panel" id="tournament">
+					<div class="tournament">
+					
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<script>
+			$(document).foundation();
+			
+			var playersTemplate = `
+				<div class="grid-container players">
+					{{#players}}
+						<div class="grid-x grid-margin-x">
+							<div class="cell small-6">
+								<input type="text" value="{{name}}" name="name_{{@row}}" placeholder="name"/>
+							</div>
+							<div class="cell small-6">
+								<input type="text" value="{{rating}}" name="rating_{{@row}}" placeholder="rating"/>
+							</div>
+						</div>
+					{{/}}
+				</div>
+			`;
+			
+			var poolTemplate = `
+				<div class="pools grid-x grid-margin-x">
+					{{#pools}}
+						<div class="pool cell medium-4">
+							<h2>Pool {{@row}}</h2>
+							{{#players}}
+								<div class="grid-x grid-margin-x player" data-seed="{{seed}}" data-name="{{name}}">
+									<div class="cell small-8">
+										<input type="text" value="{{seed}}. {{name}}" disabled/>
+									</div>
+									<div class="cell small-4">
+										<input type="number" name="finish" value="{{@row}}"/>
+									</div>
+								</div>
+							{{/}}
+						</div>
+					{{/}}
+				</div>
+			`;
+			
+			var tournamentTemplate = `
+				{{#tournaments}}
+					<div class="tournament grid-x grid-margin-x">
+						<h2>{{title}}</h2>
+						{{#players}}
+							<div class="player cell small-12">
+								<input type="text" value="{{seed}}. {{name}}" disabled/>
+							</div>
+						{{/}}
+					</div>
+				{{/}}
+			`
+			
+			var calculatePools = function(args) {
+				var start = args.minPlayers;
+				while(start <= args.maxPlayers) {
+					var test = args.players.length / start;
+					if (test > args.maxPools) {
+						start++;
+						continue;
+					}
+					
+					var numPools = Math.ceil(test);
+					if (args.players.length / numPools < args.minPlayers) {
+						start++;
+						continue;
+					}
+					
+					break;
+				}
+				
+				var numPools = Math.ceil(args.players.length / start);
+				
+				var pools = [];
+				for(var i = 0; i < numPools; i++) {
+					pools.push({
+						players : []
+					});
+				}
+				
+				var poolNum = 0;
+				var direction = 1;
+				for(var i = 0; i < args.players.length; i++) {
+					pools[poolNum].players.push(args.players[i]);
+					
+					poolNum += direction;
+					
+					if (poolNum === numPools) {
+						direction = -1;
+						poolNum--;
+					} else if (poolNum === -1) {
+						direction = 1;
+						poolNum++;
+					}
+				}
+				
+				return pools;
+			}
+			
+			var unwindRound = function(node) {
+				var numPlayers = 0;
+				var pools = [];
+				node.find(".pool").each(function(i, val) {
+					var players = [];
+					$(this).find(".player").each(function(i2, val2) {
+						numPlayers++;
+						players.push({
+							name : $(this).attr("data-name"),
+							seed : $(this).attr("data-seed"),
+							finish : Number($(this).find("[name=finish]").val())
+						});
+					});
+					
+					players.sort(function(a, b) { return a.finish - b.finish });
+					
+					pools.push(players);
+				});
+				
+				var newPlayers = [];
+				var direction = 1;
+				var poolNum = 0;
+				for(var i = 0; i < numPlayers; i++) {
+					newPlayers.push(pools[poolNum].shift());
+					
+					poolNum += direction;
+					
+					if (poolNum === pools.length) {
+						direction = -1;
+						poolNum--;
+					} else if (poolNum === -1) {
+						direction = 1;
+						poolNum++;
+					}
+				}
+				
+				return newPlayers;
+			}
+			
+			var getStartPlayers = function() {
+				
+				
+				var numPlayers = Number($("[name=numplayers]").val());
+				var players = [];
+				
+				for(var i = 1; i < numPlayers + 1; i++) {
+					players.push({
+						name : $("[name=name_" + i + "]").val(),
+						rating : Number($("[name=rating_" + i + "]").val())
+					});
+				}
+				
+				players.sort(function(a, b) { return b.rating - a.rating });
+				
+				players.forEach(function(val, i) {
+					val.seed = i + 1;
+				});
+				
+				return players;
+			}
+			
+			var getSettings = function() {
+				var setupForm = $(".setup form");
+				
+				var returnData = {
+					minPools : Number(setupForm.find("[name=minpools]").val()),
+					maxPools : Number(setupForm.find("[name=maxpools]").val()),
+					minPlayers : Number(setupForm.find("[name=minplayers]").val()),
+					maxPlayers : Number(setupForm.find("[name=maxplayers]").val())
+				}
+				
+				return returnData;
+			}
+			
+			require(["goatee"], function(goatee) {
+				var setupForm = $(".setup form");
+				
+				var players;
+				var numPlayers;
+				
+				setupForm.submit(function(e) {
+					e.preventDefault();
+					
+					$(".round1").empty();
+					$(".round2").empty();
+					
+					var startArgs = getSettings();
+					startArgs.players = getStartPlayers();
+					
+					var pools = calculatePools(startArgs);
+					
+					$(".round1").append(goatee.fill(poolTemplate, { pools : pools }));
+				});
+				
+				$(".setupPlayers").click(function(e) {
+					e.preventDefault();
+					
+					var ratings = 2000;
+					var players = [];
+					var numPlayers = Number($("[name=numplayers]").val());
+					for(var i = 0; i < numPlayers; i++) {
+						var row = i + 1;
+						players.push({
+							name : "Player_" + row,
+							rating : ratings--
+						});
+					}
+					
+					var playerHtml = goatee.fill(playersTemplate, { players : players });
+					$(".playersContainer").empty().html(playerHtml);
+				});
+				
+				$(".startRound2").click(function(e) {
+					e.preventDefault();
+					
+					$(".round2").empty();
+					
+					var players = unwindRound($(".round1"));
+					
+					var moveCount = Math.ceil(players.length / 2);
+					
+					var top = players.splice(0, moveCount);
+					var bottom = players;
+					
+					var settings = getSettings();
+					settings.maxPools = settings.maxPools / 2;
+					settings.minPools = settings.minPools / 2;
+					settings.players = top;
+					
+					var topPools = calculatePools(settings);
+					$(".round2").append("<div class='topHalf'>" + goatee.fill(poolTemplate, { pools : topPools }) + "</div>");
+					
+					var settings = getSettings();
+					settings.maxPools = settings.maxPools/ 2;
+					settings.minPools = settings.minPools / 2;
+					settings.players = bottom;
+					
+					var bottomPools = calculatePools(settings);
+					$(".round2").append("<div class='bottomHalf'>" + goatee.fill(poolTemplate, { pools : bottomPools }) + "</div>");
+				});
+				
+				$(".startTournament").click(function(e) {
+					e.preventDefault();
+					
+					$(".tournament").empty();
+					
+					var tournaments = [];
+					
+					var topPlayers = unwindRound($(".topHalf"));
+					tournaments[0] = {
+						title : "Platinum",
+						players : topPlayers.splice(0, Math.ceil(topPlayers.length / 2)),
+					}
+					
+					tournaments[1] = {
+						title : "Gold",
+						players : topPlayers
+					}
+					
+					var bottomPlayers = unwindRound($(".bottomHalf"));
+					tournaments[2] = {
+						title : "Silver",
+						players : bottomPlayers.splice(0, Math.ceil(bottomPlayers.length / 2)),
+					}
+					tournaments[3] = {
+						title : "Bronze",
+						players : bottomPlayers
+					}
+					
+					tournaments.forEach(function(val, i) {
+						val.players.forEach(function(val, i) {
+							val.seed = i + 1;
+						});
+					});
+					
+					$(".tournament").append(goatee.fill(tournamentTemplate, { tournaments : tournaments }));
+				});
+				// var lowRange = startArgs.minPlayers * startArgs.minPools;
+				// var maxRange = startArgs.maxPlayers * startArgs.maxPools;
+			});
+		</script>
+	</body>
+</html>
