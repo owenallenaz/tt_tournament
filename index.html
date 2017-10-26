@@ -22,8 +22,17 @@
 	<body>
 		<div class="grid-container">
 			<h1>Tournament Creator</h1>
+			<div class="grid-x grid-margin-x">
+				<div class="cell small-2">
+					<button class="button expanded save">Save</button>
+				</div>
+				<div class="cell small-2">
+					<button class="button expanded load">Load</button>
+				</div>
+			</div>
 			<ul class="tabs" data-tabs id="primary-tabs">
 				<li class="tabs-title is-active"><a href="#setup">Setup</a></li>
+				<li class="tabs-title"><a href="#players">Players</a></li>
 				<li class="tabs-title"><a href="#round1">Round 1</a></li>
 				<li class="tabs-title"><a href="#round2">Round 2</a></li>
 				<li class="tabs-title"><a href="#tournament">Tournament</a></li>
@@ -31,56 +40,56 @@
 			<div class="tabs-content" data-tabs-content="primary-tabs">
 				<div class="tabs-panel is-active" id="setup">
 					<div class="setup">
-						<form>
-							<div class="grid-x grid-margin-x">
-								<div class="cell small-8">
-									<label>
-										Number of Players
-										<input type="number" name="numplayers" value="28"/>
-									</label>
-								</div>
-								<div class="cell small-4">
-									<label>
-										&nbsp;
-										<button class="button expanded setupPlayers">Setup Players</button>
-									</label>
-								</div>
+						<div class="grid-x grid-margin-x">
+							<div class="cell small-8">
+								<label>
+									Number of Players
+									<input type="text" name="numplayers" value="28"/>
+								</label>
 							</div>
-							<div class="grid-x grid-margin-x">
-								<div class="cell small-6">
-									<label>
-										Min Pools
-										<input type="number" name="minpools" value="4"/>
-									</label>
-								</div>
-								<div class="cell small-6">
-									<label>
-										Max Pools
-										<input type="number" name="maxpools" value="8"/>
-									</label>
-								</div>
+							<div class="cell small-4">
+								<label>
+									&nbsp;
+									<button class="button expanded setupPlayers">Setup Players</button>
+								</label>
 							</div>
-							<div class="grid-x grid-margin-x">
-								<div class="cell small-6">
-									<label>
-										Min Players
-										<input type="number" name="minplayers" value="4"/>
-									</label>
-								</div>
-								<div class="cell small-6">
-									<label>
-										Max Players
-										<input type="number" name="maxplayers" value="6"/>
-									</label>
-								</div>
+						</div>
+						<div class="grid-x grid-margin-x">
+							<div class="cell small-6">
+								<label>
+									Min Pools
+									<input type="text" name="minpools" value="4"/>
+								</label>
 							</div>
-							<div class="grid-x">
-								<input type="submit" value="Build Tournament" class="button expanded"/>
+							<div class="cell small-6">
+								<label>
+									Max Pools
+									<input type="text" name="maxpools" value="8"/>
+								</label>
 							</div>
-							<div class="playersContainer">
-							
+						</div>
+						<div class="grid-x grid-margin-x">
+							<div class="cell small-6">
+								<label>
+									Min Players
+									<input type="text" name="minplayers" value="4"/>
+								</label>
 							</div>
-						</form>
+							<div class="cell small-6">
+								<label>
+									Max Players
+									<input type="text" name="maxplayers" value="6"/>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="tabs-panel" id="players">
+					<div class="playersContainer">
+					
+					</div>
+					<div class="grid-x">
+						<button class="button expanded startRound1">Start Round 1</button>
 					</div>
 				</div>
 				<div class="tabs-panel" id="round1">
@@ -136,7 +145,7 @@
 										<input type="text" value="{{seed}}. {{name}}" disabled/>
 									</div>
 									<div class="cell small-4">
-										<input type="number" name="finish" value="{{@row}}"/>
+										<input type="text" name="finish" value="{{@row}}"/>
 									</div>
 								</div>
 							{{/}}
@@ -244,8 +253,6 @@
 			}
 			
 			var getStartPlayers = function() {
-				
-				
 				var numPlayers = Number($("[name=numplayers]").val());
 				var players = [];
 				
@@ -266,9 +273,10 @@
 			}
 			
 			var getSettings = function() {
-				var setupForm = $(".setup form");
+				var setupForm = $(".setup");
 				
 				var returnData = {
+					numPlayers : Number(setupForm.find("[name=numplayers]").val()),
 					minPools : Number(setupForm.find("[name=minpools]").val()),
 					maxPools : Number(setupForm.find("[name=maxpools]").val()),
 					minPlayers : Number(setupForm.find("[name=minplayers]").val()),
@@ -279,26 +287,41 @@
 			}
 			
 			require(["goatee"], function(goatee) {
-				var setupForm = $(".setup form");
-				
 				var players;
 				var numPlayers;
 				
-				setupForm.submit(function(e) {
-					e.preventDefault();
-					
-					$(".round1").empty();
-					$(".round2").empty();
-					
-					var startArgs = getSettings();
-					startArgs.players = getStartPlayers();
-					
-					var pools = calculatePools(startArgs);
-					
-					$(".round1").append(goatee.fill(poolTemplate, { pools : pools }));
+				var cache = {};
+				
+				$(document).on("change", "input[type=text]", function(e) {
+					$(this).attr("value", $(this).val());
 				});
 				
-				$(".setupPlayers").click(function(e) {
+				$(".save").click(function(e) {
+					var yes = window.confirm("Save values? This will overwrite a previous save.");
+					if (!yes) { return; }
+					
+					var cache = {};
+					cache.setup = $(".setup").html();
+					cache.playersContainer = $(".playersContainer").html();
+					cache.round1 = $(".round1").html();
+					cache.round2 = $(".round2").html();
+					cache.tournament = $(".tournament").html();
+					localStorage.setItem("cache", JSON.stringify(cache));
+				});
+				
+				$(".load").click(function(e) {
+					var yes = window.confirm("Load values? This will overwrite a previous save");
+					if (!yes) { return; }
+					
+					cache = JSON.parse(localStorage.getItem("cache"));
+					$(".setup").html(cache.setup);
+					$(".playersContainer").html(cache.playersContainer);
+					$(".round1").html(cache.round1);
+					$(".round2").html(cache.round2);
+					$(".tournament").html(cache.tournament);
+				});
+				
+				$(document).on("click", ".setupPlayers", function(e) {
 					e.preventDefault();
 					
 					var ratings = 2000;
@@ -316,7 +339,20 @@
 					$(".playersContainer").empty().html(playerHtml);
 				});
 				
-				$(".startRound2").click(function(e) {
+				$(document).on("click", ".startRound1", function(e) {
+					e.preventDefault();
+					
+					$(".round1").empty();
+					$(".round2").empty();
+					
+					var startArgs = getSettings();
+					startArgs.players = getStartPlayers();
+					
+					var pools = calculatePools(startArgs);
+					$(".round1").append(goatee.fill(poolTemplate, { pools : pools }));
+				});
+				
+				$(document).on("click", ".startRound2", function(e) {
 					e.preventDefault();
 					
 					$(".round2").empty();
@@ -345,7 +381,7 @@
 					$(".round2").append("<div class='bottomHalf'>" + goatee.fill(poolTemplate, { pools : bottomPools }) + "</div>");
 				});
 				
-				$(".startTournament").click(function(e) {
+				$(document).on("click", ".startTournament", function(e) {
 					e.preventDefault();
 					
 					$(".tournament").empty();
@@ -381,8 +417,6 @@
 					
 					$(".tournament").append(goatee.fill(tournamentTemplate, { tournaments : tournaments }));
 				});
-				// var lowRange = startArgs.minPlayers * startArgs.minPools;
-				// var maxRange = startArgs.maxPlayers * startArgs.maxPools;
 			});
 		</script>
 	</body>
