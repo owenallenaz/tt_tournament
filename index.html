@@ -41,20 +41,6 @@
 				<div class="tabs-panel is-active" id="setup">
 					<div class="setup">
 						<div class="grid-x grid-margin-x">
-							<div class="cell small-8">
-								<label>
-									Number of Players
-									<input type="text" name="numplayers" value="28"/>
-								</label>
-							</div>
-							<div class="cell small-4">
-								<label>
-									&nbsp;
-									<button class="button expanded setupPlayers">Setup Players</button>
-								</label>
-							</div>
-						</div>
-						<div class="grid-x grid-margin-x">
 							<div class="cell small-6">
 								<label>
 									Min Pools
@@ -79,6 +65,14 @@
 								<label>
 									Max Players
 									<input type="text" name="maxplayers" value="6"/>
+								</label>
+							</div>
+						</div>
+						<div class="grid-x grid-margin-x">
+							<div class="cell small-12">
+								<label>
+									&nbsp;
+									<button class="button expanded setupPlayers">Setup Players</button>
 								</label>
 							</div>
 						</div>
@@ -118,6 +112,153 @@
 		
 		<script>
 			$(document).foundation();
+			
+			var startPlayers = [
+				{
+					name : "Adam Block",
+					rating : 1969
+				},
+				{
+					name : "Sreeram Parameswaran",
+					rating : 1935
+				},
+				{
+					name : "Willing Cheng",
+					rating : 1857
+				},
+				{
+					name : "Yijie Zhang",
+					rating : 1847
+				},
+				{
+					name : "Michael Hammerschmidt",
+					rating : 1840
+				},
+				{
+					name : "Kamran Salek",
+					rating : 1821
+				},
+				{
+					name : "Christopher Castro",
+					rating : 1820
+				},
+				{
+					name : "Raphael Lizama",
+					rating : 1787
+				},
+				{
+					name : "Jimmy Alvarado",
+					rating : 1678
+				},
+				{
+					name : "Arun Ravishankar",
+					rating : 1617
+				},
+				{
+					name : "Jeremiah Sbarra",
+					rating : 1612
+				},
+				{
+					name : "Gustavo Romero",
+					rating : 1548
+				},
+				{
+					name : "David Le",
+					rating : 1544
+				},
+				{
+					name : "Eric Ziegler",
+					rating : 1544
+				},
+				{
+					name : "Richard Tena",
+					rating : 1513
+				},
+				{
+					name : "Jimmy Nguyen",
+					rating : 1497
+				},
+				{
+					name : "Howard Lambert",
+					rating : 1425
+				},
+				{
+					name : "Owen Allen",
+					rating : 1407
+				},
+				{
+					name : "Lev Vays",
+					rating : 1335
+				},
+				{
+					name : "Miguel Noguera",
+					rating : 1282
+				},
+				{
+					name : "Roger Baldner",
+					rating : 1275
+				},
+				{
+					name : "Yen Vu",
+					rating : 1275
+				},
+				{
+					name : "David Schulte",
+					rating : 1249
+				},
+				{
+					name : "Quoc Pham",
+					rating : 1246
+				},
+				{
+					name : "Daniel Plattner",
+					rating : 1218
+				},
+				{
+					name : "Mike Simon",
+					rating : 1200
+				},
+				{
+					name : "Michael Graulich",
+					rating : 1149
+				},
+				{
+					name : "Gerard Anderson",
+					rating : 1067
+				},
+				{
+					name : "Mark Morton",
+					rating : 1043
+				},
+				{
+					name : "Paul Gold",
+					rating : 952
+				},
+				{
+					name : "Brandon Allvin",
+					rating : 922
+				},
+				{
+					name : "Abdo Morgan",
+					rating : 900
+				},
+				{
+					name : "Barbara Plessen",
+					rating : 899
+				},
+				{
+					name : "Tim Edmunds",
+					rating : 835
+				},
+				{
+					name : "Frank Andy",
+					rating : 782
+				},
+				{
+					name : "Kelvin Wong",
+					rating : 752
+				}
+			]
 			
 			var playersTemplate = `
 				<div class="grid-container players">
@@ -253,14 +394,18 @@
 			}
 			
 			var getStartPlayers = function() {
-				var numPlayers = Number($("[name=numplayers]").val());
+				var numPlayers = 48;
 				var players = [];
 				
 				for(var i = 1; i < numPlayers + 1; i++) {
-					players.push({
+					var player = {
 						name : $("[name=name_" + i + "]").val(),
 						rating : Number($("[name=rating_" + i + "]").val())
-					});
+					}
+					
+					if (player.name !== "") {
+						players.push(player);
+					}
 				}
 				
 				players.sort(function(a, b) { return b.rating - a.rating });
@@ -276,7 +421,6 @@
 				var setupForm = $(".setup");
 				
 				var returnData = {
-					numPlayers : Number(setupForm.find("[name=numplayers]").val()),
 					minPools : Number(setupForm.find("[name=minpools]").val()),
 					maxPools : Number(setupForm.find("[name=maxpools]").val()),
 					minPlayers : Number(setupForm.find("[name=minplayers]").val()),
@@ -326,13 +470,10 @@
 					
 					var ratings = 2000;
 					var players = [];
-					var numPlayers = Number($("[name=numplayers]").val());
+					var numPlayers = 48;
 					for(var i = 0; i < numPlayers; i++) {
 						var row = i + 1;
-						players.push({
-							name : "Player_" + row,
-							rating : ratings--
-						});
+						players.push(startPlayers[i] || {});
 					}
 					
 					var playerHtml = goatee.fill(playersTemplate, { players : players });
