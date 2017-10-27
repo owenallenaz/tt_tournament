@@ -68,14 +68,6 @@
 								</label>
 							</div>
 						</div>
-						<div class="grid-x grid-margin-x">
-							<div class="cell small-12">
-								<label>
-									&nbsp;
-									<button class="button expanded setupPlayers">Setup Players</button>
-								</label>
-							</div>
-						</div>
 					</div>
 				</div>
 				<div class="tabs-panel" id="players">
@@ -465,9 +457,7 @@
 					$(".tournament").html(cache.tournament);
 				});
 				
-				$(document).on("click", ".setupPlayers", function(e) {
-					e.preventDefault();
-					
+				var setupPlayers = function() {
 					var ratings = 2000;
 					var players = [];
 					var numPlayers = 48;
@@ -478,7 +468,9 @@
 					
 					var playerHtml = goatee.fill(playersTemplate, { players : players });
 					$(".playersContainer").empty().html(playerHtml);
-				});
+				};
+				
+				setupPlayers();
 				
 				$(document).on("click", ".startRound1", function(e) {
 					e.preventDefault();
